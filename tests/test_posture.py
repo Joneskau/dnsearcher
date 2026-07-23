@@ -1,0 +1,12 @@
+import asyncio
+from dnsearcher.resolver import resolve_all
+from dnsearcher.analysis.posture import run_posture
+
+
+def test_weak_domain_flags_soft_spf(weak_domain):
+    rs = asyncio.run(resolve_all(weak_domain, "example.com"))
+    result = run_posture(rs, dmarc_txt=None)
+    ids = {f["id"] for f in result["findings"]}
+    assert "DNS-EMAIL-SPF-WEAK" in ids
+    assert "DNS-EMAIL-DMARC-MISSING" in ids
+    assert result["grade"] in {"C", "D", "F", "B", "B+"}

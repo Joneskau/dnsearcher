@@ -1,0 +1,1 @@
+"""Output formatting helpers for the CLI (TODO: table/JSON renderers)."""
