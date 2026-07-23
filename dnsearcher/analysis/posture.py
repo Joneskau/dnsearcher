@@ -1,12 +1,14 @@
 from __future__ import annotations
 from ..models.records import RecordSet
 from ..models.findings import Finding
+from ..resolver import Resolver
 from . import email_security, scoring
 
 
-def run_posture(rs: RecordSet, dmarc_txt: str | None) -> dict:
+async def run_posture(rs: RecordSet, dmarc_txt: str | None, resolver: Resolver) -> dict:
     findings: list[Finding] = []
     findings += email_security.check_spf(rs)
+    findings += await email_security.check_spf_excessive_lookups(resolver, rs)
     findings += email_security.check_dmarc(dmarc_txt, rs.domain, rs.resolver)
     # TODO: dnssec presence, caa, axfr, ns consistency, soa, ttl checks
 
