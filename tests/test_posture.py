@@ -17,3 +17,24 @@ def test_excessive_spf_lookups_flagged(excessive_spf_domain):
     result = asyncio.run(run_posture(rs, dmarc_txt=None, resolver=excessive_spf_domain))
     ids = {f["id"] for f in result["findings"]}
     assert "DNS-EMAIL-SPF-EXCESSIVE-LOOKUP" in ids
+
+
+def test_good_domain_scores_well(good_domain):
+    rs = asyncio.run(resolve_all(good_domain, "good.example.com"))
+    result = asyncio.run(run_posture(
+        rs,
+        dmarc_txt="v=DMARC1; p=reject; rua=mailto:dmarc@good.example.com",
+        resolver=good_domain,
+    ))
+    ids = {f["id"] for f in result["findings"]}
+    assert "DNS-DOMAIN-DNSSEC-ABSENT" not in ids
+    assert "DNS-DOMAIN-CAA-MISSING" not in ids
+    assert "DNS-DOMAIN-AXFR-OPEN" not in ids
+    assert result["grade"] in {"A+", "A", "B+"}
+
+
+def test_open_axfr_is_critical(open_axfr_domain):
+    rs = asyncio.run(resolve_all(open_axfr_domain, "axfr.example.com"))
+    result = asyncio.run(run_posture(rs, dmarc_txt=None, resolver=open_axfr_domain))
+    ids = {f["id"] for f in result["findings"]}
+    assert "DNS-DOMAIN-AXFR-OPEN" in ids
